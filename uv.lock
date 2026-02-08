@@ -1,0 +1,23 @@
+version = 1
+revision = 3
+requires-python = ">=3.11"
+
+[[package]]
+name = "gpis-mitsuba"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "nanobind" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nanobind", specifier = ">=2.11.0" }]
+
+[[package]]
+name = "nanobind"
+version = "2.11.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7c/d6/2d17c0a630fabc05785c0ea57a994bb165b342416bec8e41c96f3fee5add/nanobind-2.11.0.tar.gz", hash = "sha256:6d98d063c61dbbd05a2d903e59be398bfcff9d59c54fbbc9d4488960485d40d0", size = 1001251, upload-time = "2026-01-29T11:24:34.403Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e8/1c/37ae5b9a0d13defd8e27222e4cbfb82e569dbfd12d16ba8c78cab593e56c/nanobind-2.11.0-py3-none-any.whl", hash = "sha256:8097442c3e55d011a67f016ce1d9567ed9e3cdb3ad6749f13a76dbbc2721f0ee", size = 248913, upload-time = "2026-01-29T11:24:32.651Z" },
+]

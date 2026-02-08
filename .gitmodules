@@ -1,0 +1,4 @@
+[submodule "external/mitsuba3"]
+	path = external/mitsuba3
+	url = https://github.com/mitsuba-renderer/mitsuba3.git
+    	branch = stable
