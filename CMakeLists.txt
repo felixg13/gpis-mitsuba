@@ -1,16 +1,16 @@
-cmake_minimum_required(VERSION 3.15)
-project(MitsubaCustomShapes)
+cmake_minimum_required(VERSION 3.21)
+project(gpis_mitusba LANGUAGES CXX)
 
-set(CMAKE_DISABLE_FIND_PACKAGE_nanobind TRUE)
+# Path to your tracked config
+set(TRACKED_MITSUBA_CONF "${CMAKE_CURRENT_SOURCE_DIR}/resources/mitsuba.conf")
 
+# Destination in build dir (same place as plugins)
+set(DEST_MITSUBA_CONF "${CMAKE_BINARY_DIR}/external/mitsuba3/mitsuba.conf")
+
+# Copy the tracked config over
+message(STATUS "Copying tracked mitsuba.conf to build directory")
+configure_file("${TRACKED_MITSUBA_CONF}" "${DEST_MITSUBA_CONF}" COPYONLY)
+set(MI_ENABLE_EMBREE OFF)
 add_subdirectory(external/mitsuba3)
 
-add_library(my_shape MODULE src/my_shape.cpp)
-
-target_link_libraries(my_shape PRIVATE mitsuba-core mitsuba-render)
-
-set_target_properties(my_shape PROPERTIES PREFIX "")
-
-set_target_properties(
-  my_shape PROPERTIES LIBRARY_OUTPUT_DIRECTORY
-                      "${CMAKE_BINARY_DIR}/external/mitsuba3/plugins")
+add_subdirectory(src)

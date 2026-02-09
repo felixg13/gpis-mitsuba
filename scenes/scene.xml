@@ -1,0 +1,50 @@
+<scene version="3.0.0">
+    <integrator type="path"/>
+    
+    <sensor type="perspective">
+        <transform name="to_world">
+            <lookat origin="0, 0, 5" target="0, 0, 0" up="0, 1, 0"/>
+        </transform>
+        <film type="hdrfilm">
+            <integer name="width" value="512"/>
+            <integer name="height" value="512"/>
+        </film>
+    </sensor>
+    
+    <shape type="sphere">
+        <transform name="to_world">
+            <translate x="0" y="0" z="0"/>
+            <scale value="1.0"/>
+        </transform>
+        <bsdf type="diffuse">
+            <rgb name="reflectance" value="0.8, 0.8, 0.8"/>
+        </bsdf>
+    </shape>
+
+    <shape type="my_sphere">
+        <transform name="to_world">
+            <translate x="1" y="1" z="1"/>
+            <scale value="1.0"/>
+        </transform>
+        <bsdf type="diffuse">
+            <rgb name="reflectance" value="0.8, 0.8, 0.8"/>
+        </bsdf>
+    </shape>
+    
+    <!-- Point light -->
+    <emitter type="point">
+        <rgb name="intensity" value="100, 100, 100"/>
+        <point name="position" x="3" y="3" z="3"/>
+    </emitter>
+    
+    <!-- Optional: Add another light for better illumination -->
+    <emitter type="point">
+        <rgb name="intensity" value="50, 50, 50"/>
+        <point name="position" x="-2" y="2" z="4"/>
+    </emitter>
+    
+    <!-- Optional: Constant background color -->
+    <emitter type="constant">
+        <rgb name="radiance" value="0.1, 0.1, 0.1"/>
+    </emitter>
+</scene>
