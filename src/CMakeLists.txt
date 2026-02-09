@@ -1,8 +1,6 @@
-cmake_minimum_required(VERSION 3.21)
 add_library(my_sphere SHARED my_sphere.cpp)
 target_link_libraries(my_sphere PRIVATE mitsuba)
 
-# Includes (hardcoded all Mitsuba ext dependencies)
 target_include_directories(my_sphere PRIVATE
     ${mitsuba_SOURCE_DIR}/include
     ${mitsuba_BINARY_DIR}/include
@@ -17,7 +15,6 @@ target_include_directories(my_sphere PRIVATE
     ${mitsuba_SOURCE_DIR}/ext/drjit/ext/drjit-core/ext/robin_map/include
 )
 
-# Plugin output
 set(PLUGIN_OUTPUT_DIR ${CMAKE_BINARY_DIR}/external/mitsuba3/plugins)
 file(MAKE_DIRECTORY ${PLUGIN_OUTPUT_DIR})
 set_target_properties(my_sphere PROPERTIES

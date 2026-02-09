@@ -1,6 +1,0 @@
-<!-- scenes/examples/test_my_shape.xml -->
-<scene version="3.0.0">
-    <shape type="my_shape">
-        <!-- Your shape parameters -->
-    </shape>
-</scene>
