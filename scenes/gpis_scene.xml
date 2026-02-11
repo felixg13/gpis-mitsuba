@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+    GPIS Sphere Example Scene
+    Demonstrates the Gaussian Process Implicit Surface sphere shape
+-->
+
+<scene version="3.0.0">
+    <!-- Integrator -->
+    <integrator type="path">
+        <integer name="max_depth" value="8"/>
+    </integrator>
+
+    <!-- Camera -->
+    <sensor type="perspective">
+        <float name="fov" value="45"/>
+        <transform name="to_world">
+            <lookat origin="0, 0, 5"
+                    target="0, 0, 0"
+                    up="0, 1, 0"/>
+        </transform>
+        <sampler type="independent">
+            <integer name="sample_count" value="64"/>
+        </sampler>
+        <film type="hdrfilm">
+            <integer name="width" value="512"/>
+            <integer name="height" value="512"/>
+            <rfilter type="gaussian"/>
+        </film>
+    </sensor>
+
+    <!-- GPIS Sphere with standard settings -->
+    <shape type="gpis_sphere">
+        <point name="center" x="0" y="0" z="0"/>
+        <float name="radius" value="1.0"/>
+        <integer name="num_samples" value="100"/>
+        <float name="lengthscale" value="0.3"/>
+        <integer name="num_ray_samples" value="8"/>
+        <float name="max_ray_distance" value="4.0"/>
+        
+        <bsdf type="diffuse">
+            <rgb name="reflectance" value="0.8, 0.2, 0.2"/>
+        </bsdf>
+    </shape>
+
+    <!-- Second GPIS sphere with different lengthscale (smoother) -->
+    <shape type="gpis_sphere">
+        <point name="center" x="-2.5" y="0" z="0"/>
+        <float name="radius" value="0.8"/>
+        <integer name="num_samples" value="80"/>
+        <float name="lengthscale" value="0.8"/>
+        
+        <bsdf type="diffuse">
+            <rgb name="reflectance" value="0.2, 0.8, 0.2"/>
+        </bsdf>
+    </shape>
+
+    <!-- Third GPIS sphere with very small lengthscale (rougher) -->
+    <shape type="gpis_sphere">
+        <point name="center" x="2.5" y="0" z="0"/>
+        <float name="radius" value="0.8"/>
+        <integer name="num_samples" value="120"/>
+        <float name="lengthscale" value="0.15"/>
+        
+        <bsdf type="diffuse">
+            <rgb name="reflectance" value="0.2, 0.2, 0.8"/>
+        </bsdf>
+    </shape>
+
+    <!-- Ground plane -->
+    <shape type="rectangle">
+        <transform name="to_world">
+            <scale x="10" y="10" z="1"/>
+            <rotate y="1" angle="90"/>
+            <translate y="-1.5" z="0"/>
+        </transform>
+        <bsdf type="diffuse">
+            <rgb name="reflectance" value="0.8, 0.8, 0.8"/>
+        </bsdf>
+    </shape>
+
+    <!-- Area light -->
+    <shape type="rectangle">
+        <transform name="to_world">
+            <scale x="2" y="2" z="1"/>
+            <translate x="0" y="3" z="2"/>
+        </transform>
+        <emitter type="area">
+            <rgb name="radiance" value="5, 5, 5"/>
+        </emitter>
+    </shape>
+
+    <!-- Environment light -->
+    <emitter type="constant">
+        <rgb name="radiance" value="0.3, 0.3, 0.3"/>
+    </emitter>
+</scene>

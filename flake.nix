@@ -36,6 +36,10 @@
 	    # ray tracing
             tbb
             embree
+
+            # Math libraries
+            eigen
+            boost
           ];
 
           CMAKE_GENERATOR = "Ninja";
