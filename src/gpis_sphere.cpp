@@ -22,48 +22,30 @@ public:
   using typename Base::ScalarIndex;
   using typename Base::ScalarSize;
 
-  GpisSphere(const Properties &props) : Base(props) {
-    /// Are the sphere normals pointing inwards? default: no
-    m_flip_normals = props.get<bool>("flip_normals", false);
+  GpisSphere(const Properties &props)
+      : Base(props), m_flip_normals(props.get<bool>("flip_normals", false)),
+        m_num_samples(props.get<int>("num_samples", 100)),
+        m_num_ray_samples(props.get<int>("num_ray_samples", 8)),
+        m_max_ray_distance(props.get<ScalarFloat>("max_ray_distance", 4.0f)),
+        m_gp(std::make_shared<gpis::SquaredExponentialKernel<Float>>(
+                 props.get<ScalarFloat>("lengthscale", 0.5f),
+                 props.get<ScalarFloat>("signal_variance", 1.0f)),
+             props.get<ScalarFloat>("noise_variance", 1e-4f),
+             props.get<uint64_t>("gp_seed", 0)) {
     m_center = props.get<ScalarPoint3f>("center", ScalarPoint3f(0.f));
     m_radius = props.get<ScalarFloat>("radius", 1.0f);
-    m_num_samples = props.get<int>("num_samples", 100);
-    m_num_ray_samples = props.get<int>("num_ray_samples", 8);
-    m_max_ray_distance = props.get<ScalarFloat>("max_ray_distance", 4.0f);
-    // GP parameters
-    ScalarFloat lengthscale = props.get<ScalarFloat>("lengthscale", 0.5f);
-    ScalarFloat signal_variance =
-        props.get<ScalarFloat>("signal_variance", 1.0f);
-    std::string kernel_type = props.get<std::string>("kernel_type", "rbf");
 
     m_discontinuity_types = (uint32_t)DiscontinuityFlags::InteriorType;
-
     m_shape_type = ShapeType::Sphere;
 
-    // Create kernel - types are automatically imported
-    auto kernel =
-        std::make_shared<gpis::SquaredExponentialKernel<Float, Spectrum>>(
-            1.0f, // lengthscale
-            1.0f  // signal variance
-        );
+    // Add observations
+    m_gp.add_observation(Point3f(0.f, 0.f, 0.f), 1.0f);
+    m_gp.add_observation(Point3f(1.f, 0.f, 0.f), 0.5f);
+    m_gp.add_observation(Point3f(0.f, 1.f, 0.f), -0.5f);
 
-    gpis::GaussianProcess<Float, Spectrum> gp(kernel, 1e-4f);
+    // Train the GP
+    m_gp.train();
 
-    // Add observations using imported Point3f type
-    gp.add_observation(Point3f(0.f, 0.f, 0.f), 1.0f);
-    gp.add_observation(Point3f(1.f, 0.f, 0.f), 0.5f);
-    gp.add_observation(Point3f(0.f, 1.f, 0.f), -0.5f);
-
-    gp.train();
-
-    // // Predict
-    Point3f test_point(0.5f, 0.5f, 0.5f);
-    Float mean = gp.predict_mean(test_point);
-    Float variance = gp.predict_variance(test_point);
-
-    std::cout << "  Prediction at (0.5, 0.5, 0.5):" << std::endl;
-    std::cout << "  Mean: " << mean << std::endl;
-    std::cout << "  Variance: " << variance << std::endl;
     update();
     initialize();
   }
@@ -304,7 +286,7 @@ public:
                            dr::float32_array_t<FloatP>,
                            dr::float64_array_t<FloatP>>;
     using Value3 = Vector<Value, 3>;
-
+    using Point3fp = Point<FloatP, 3>;
     using ScalarValue = dr::scalar_t<Value>;
     using ScalarValue3 = Vector<ScalarValue, 3>;
 
@@ -313,14 +295,32 @@ public:
     if constexpr (dr::is_jit_v<Value>) {
       Throw("None Scalar Value not implemented!");
     }
-    Value maxt = Value(ray.maxt);
-    Value step = maxt / m_num_samples;
-    std::vector<Value3> points_on_ray;
-    points_on_ray.reserve(m_num_samples);
-    for (int i = 0; i < m_num_samples; ++i) {
-      Value t_i = step * ScalarValue(i);
-      Value3 point = ray.o + ray.d * t_i;
-      points_on_ray.push_back(point);
+
+    FloatP t_hit = ray.maxt;
+    dr::mask_t<FloatP> found = false;
+
+    FloatP prev_t = FloatP(0);
+    FloatP prev_f = m_gp.sample(ray.o);
+
+    auto step = ray.maxt / m_num_samples;
+    for (int i = 1; i < m_num_samples; ++i) {
+      FloatP t = step * FloatP(i);
+      Point<FloatP, 3> p = ray.o + ray.d * t;
+      FloatP f = m_gp.sample(p);
+
+      auto sign_change =
+          ((prev_f <= 0.f && f > 0.f) || (prev_f >= 0.f && f < 0.f));
+
+      auto hit_mask = sign_change && !found;
+
+      FloatP alpha = prev_f / (prev_f - f);
+      FloatP t_interp = dr::lerp(prev_t, t, alpha);
+
+      t_hit = dr::select(hit_mask, t_interp, t_hit);
+      found = found || hit_mask;
+
+      prev_f = f;
+      prev_t = t;
     }
 
     // We define a plane which is perpendicular to the ray direction and
@@ -347,6 +347,7 @@ public:
     near_t += plane_t;
     far_t += plane_t;
 
+    Value maxt = Value(ray.maxt);
     // Sphere doesn't intersect with the segment on the ray
     dr::mask_t<FloatP> out_bounds =
         !(near_t <= maxt && far_t >= Value(0.0)); // NaN-aware conditionals
@@ -550,6 +551,8 @@ private:
   int m_num_samples;
   int m_num_ray_samples;
   Float m_max_ray_distance;
+
+  gpis::GaussianProcess<Float> m_gp;
 
   MI_TRAVERSE_CB(Base, m_center, m_radius, m_inv_surface_area)
 };
