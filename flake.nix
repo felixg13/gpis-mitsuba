@@ -17,11 +17,11 @@
           nativeBuildInputs = with pkgs; [
             cmake
             ninja
-            gcc13
             pkg-config
           ];
 
           buildInputs = with pkgs; [
+            stdenv.cc.cc 
             llvm_17
             libffi
             zlib
