@@ -34,6 +34,11 @@ public:
              props.get<uint64_t>("gp_seed", 0)) {
     m_center = props.get<ScalarPoint3f>("center", ScalarPoint3f(0.f));
     m_radius = props.get<ScalarFloat>("radius", 1.0f);
+    m_to_world =
+        m_to_world.scalar() *
+        ScalarAffineTransform4f::translate(
+            props.get<ScalarPoint3f>("center", 0.f)) *
+        ScalarAffineTransform4f::scale(props.get<ScalarFloat>("radius", 1.f));
 
     m_discontinuity_types = (uint32_t)DiscontinuityFlags::InteriorType;
     m_shape_type = ShapeType::Sphere;
