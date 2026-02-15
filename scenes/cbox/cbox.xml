@@ -72,12 +72,12 @@
         <string name="filename" value="meshes/cbox_redwall.obj"/>
         <ref id="red"/>
     </shape>
-    <!--  <shape type="obj">
+    <shape type="obj">
         <string name="filename" value="meshes/cbox_smallbox.obj"/>
         <ref id="box"/>
     </shape>
     <shape type="obj">
         <string name="filename" value="meshes/cbox_largebox.obj"/>
         <ref id="box"/>
-    </shape> -->
+    </shape>
 </scene>
