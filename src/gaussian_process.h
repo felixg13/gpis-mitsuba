@@ -88,21 +88,6 @@ public:
     m_is_trained = false;
   }
 
-  void add_observations(const std::vector<Point3> &X,
-                        const std::vector<Scalar> &y) {
-    for (size_t i = 0; i < X.size(); i++) {
-      m_observations_x.push_back(X[i]);
-      m_observations_y.push_back(y[i]);
-    }
-    m_is_trained = false;
-  }
-
-  void clear_observations() {
-    m_observations_x.clear();
-    m_observations_y.clear();
-    m_is_trained = false;
-  }
-
   void condition_on_observations() {
     size_t n = m_observations_x.size();
     if (n == 0) {
@@ -232,11 +217,10 @@ public:
   FloatP evaluate_kernelP(const Point<FloatP, 3> &x1,
                           const Point<FloatP, 3> &x2) const {
     FloatP dist_sq = dr::squared_norm(x1 - x2);
+    auto l = FloatP{m_kernel->get_params().at(0)};
+    FloatP two_l_sq = FloatP{2.f} * FloatP{l * l};
 
-    FloatP l_sq = FloatP{0.3 * 0.3};
-    FloatP two_l_sq = FloatP{2.f} * l_sq;
-
-    return FloatP{1.0} * dr::exp(-dist_sq / two_l_sq);
+    return FloatP{m_noise_variance} * dr::exp(-dist_sq / two_l_sq);
   }
 
   template <typename FloatP>
@@ -250,10 +234,12 @@ public:
       k_star[i] = evaluate_kernelP(X, p);
     }
 
+    // Log(Info, "k_star=%f", k_star);
     FloatP result = FloatP(0.f);
     for (size_t i = 0; i < n; i++) {
       result = result + k_star[i] * m_alpha_flat[i];
     }
+    // Log(Info, "result=%f", result);
     return result;
   }
 
@@ -262,7 +248,8 @@ public:
   template <typename FloatP>
   FloatP sample(const Point<FloatP, 3> &X,
                 dr::mask_t<FloatP> active = true) const {
-    return dr::select(active, meanP(X), FloatP(0));
+    // return dr::select(active, meanP(X), FloatP(0));
+    return meanP(X);
   }
 
   const Kernel<Value> &kernel() const { return *m_kernel; }

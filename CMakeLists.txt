@@ -9,6 +9,7 @@ message(STATUS "Copying tracked mitsuba.conf to build directory")
 configure_file("${TRACKED_MITSUBA_CONF}" "${DEST_MITSUBA_CONF}" COPYONLY)
 
 set(MI_ENABLE_JIT ON) 
+set(MI_ENABLE_EMBREE OFF) 
 add_subdirectory(external/mitsuba3)
 
 add_subdirectory(src)

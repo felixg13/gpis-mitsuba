@@ -44,21 +44,30 @@ public:
     const ScalarFloat radius = m_radius.scalar();
     const ScalarPoint3f center = m_center.scalar();
 
+    m_gp.add_observation(center, -1.0f);
+
     for (int i = 0; i < resolution; ++i) {
       ScalarFloat theta = i * d_theta;
 
       for (int j = 0; j <= resolution; ++j) {
         ScalarFloat phi = j * d_phi;
 
-        ScalarFloat x = radius * dr::sin(phi) * dr::cos(theta);
-        ScalarFloat y = radius * dr::sin(phi) * dr::sin(theta);
-        ScalarFloat z = radius * dr::cos(phi);
-
-        Point3f p = center + Point3f(x, y, z);
-
+        ScalarFloat x0 = radius * dr::sin(phi) * dr::cos(theta);
+        ScalarFloat y0 = radius * dr::sin(phi) * dr::sin(theta);
+        ScalarFloat z0 = radius * dr::cos(phi);
+        Point3f p = center + Point3f(x0, y0, z0);
         m_gp.add_observation(p, 0.0f);
+
+        ScalarFloat xext =
+            ScalarFloat{2} * radius * dr::sin(phi) * dr::cos(theta);
+        ScalarFloat yext =
+            ScalarFloat{2} * radius * dr::sin(phi) * dr::sin(theta);
+        ScalarFloat zext = ScalarFloat{2} * radius * dr::cos(phi);
+        Point3f pext = center + Point3f(xext, yext, zext);
+        m_gp.add_observation(pext, 1.0f);
       }
     }
+
     m_gp.condition_on_observations();
 
     update();
@@ -339,7 +348,16 @@ public:
 
     // If no intersection → return infinity
     FloatP t_final = dr::select(found, t_hit, dr::Infinity<FloatP>);
-
+    // In ray_intersect_preliminary_impl, add logging:
+    // if (dr::any(found)) {
+    //   Log(Info, "Found intersection at t=%f", t_final);
+    // } else {
+    //   // Log first and last GP samples to debug
+    //   FloatP f_start = m_gp.sample(ray.o);
+    //   FloatP f_end = m_gp.sample(ray.o + ray.d * ray.maxt);
+    //   Log(Info, "No intersection. GP values: start=%f, end=%f", f_start,
+    //   f_end);
+    // }
     return {t_final, dr::zeros<Point<FloatP, 2>>(),
             dr::uint32_array_t<FloatP>((uint32_t)-1),
             dr::uint32_array_t<FloatP>(0)};

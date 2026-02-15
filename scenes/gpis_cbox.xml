@@ -2,6 +2,7 @@
     <!-- <default name="spp" value="128"/> -->
     <default name="spp" value="8"/>
     <default name="res" value="256"/>
+    <!-- <default name="max_depth" value="6"/> -->
     <default name="max_depth" value="6"/>
 
     <integrator type="path">
@@ -76,17 +77,17 @@
 
     <!-- GPIS Sphere with standard settings -->
     <shape type="gpis_sphere">
-        <point name="center" x="0" y="0" z="0"/>
-        <float name="radius" value="1.0"/>
+    <point name="center" x="278" y="350" z="278"/>
+        <float name="radius" value="20"/>
         <integer name="num_samples" value="100"/>
-        <float name="lengthscale" value="0.3"/>
+        <float name="lengthscale" value="5"/>
         <integer name="num_ray_samples" value="8"/>
         <float name="max_ray_distance" value="4.0"/>
-        
         <bsdf type="diffuse">
             <rgb name="reflectance" value="0.8, 0.2, 0.2"/>
         </bsdf>
     </shape>
+
     <!--  <shape type="obj">
         <string name="filename" value="cbox/meshes/cbox_smallbox.obj"/>
         <ref id="box"/>
