@@ -8,6 +8,7 @@ set(DEST_MITSUBA_CONF "${CMAKE_BINARY_DIR}/external/mitsuba3/mitsuba.conf")
 message(STATUS "Copying tracked mitsuba.conf to build directory")
 configure_file("${TRACKED_MITSUBA_CONF}" "${DEST_MITSUBA_CONF}" COPYONLY)
 
+set(DRJIT_ENABLE_PYTHON OFF) 
 set(MI_ENABLE_EMBREE OFF)
 add_subdirectory(external/mitsuba3)
 

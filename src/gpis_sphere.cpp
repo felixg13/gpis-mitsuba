@@ -38,13 +38,28 @@ public:
     m_discontinuity_types = (uint32_t)DiscontinuityFlags::InteriorType;
     m_shape_type = ShapeType::Sphere;
 
-    // Add observations
-    m_gp.add_observation(Point3f(0.f, 0.f, 0.f), 1.0f);
-    m_gp.add_observation(Point3f(1.f, 0.f, 0.f), 0.5f);
-    m_gp.add_observation(Point3f(0.f, 1.f, 0.f), -0.5f);
+    const int resolution = 10;
+    const ScalarFloat d_theta = 2.f * dr::Pi<ScalarFloat> / resolution;
+    const ScalarFloat d_phi = dr::Pi<ScalarFloat> / resolution;
+    const ScalarFloat radius = m_radius.scalar();
+    const ScalarPoint3f center = m_center.scalar();
 
-    // Train the GP
-    m_gp.train();
+    for (int i = 0; i < resolution; ++i) {
+      ScalarFloat theta = i * d_theta;
+
+      for (int j = 0; j <= resolution; ++j) {
+        ScalarFloat phi = j * d_phi;
+
+        ScalarFloat x = radius * dr::sin(phi) * dr::cos(theta);
+        ScalarFloat y = radius * dr::sin(phi) * dr::sin(theta);
+        ScalarFloat z = radius * dr::cos(phi);
+
+        Point3f p = center + Point3f(x, y, z);
+
+        m_gp.add_observation(p, 0.0f);
+      }
+    }
+    m_gp.condition_on_observations();
 
     update();
     initialize();
@@ -281,38 +296,37 @@ public:
   ray_intersect_preliminary_impl(const Ray3fP &ray, ScalarIndex /*prim_index*/,
                                  dr::mask_t<FloatP> active) const {
     MI_MASK_ARGUMENT(active);
-    using Value =
-        std::conditional_t<dr::is_cuda_v<FloatP> || dr::is_diff_v<Float>,
-                           dr::float32_array_t<FloatP>,
-                           dr::float64_array_t<FloatP>>;
-    using Value3 = Vector<Value, 3>;
+
+    if constexpr (dr::is_jit_v<FloatP>)
+      NotImplementedError("ray_intersect_preliminary_impl");
+
     using Point3fp = Point<FloatP, 3>;
-    using ScalarValue = dr::scalar_t<Value>;
-    using ScalarValue3 = Vector<ScalarValue, 3>;
 
-    Value radius;
-    Value3 center;
-    if constexpr (dr::is_jit_v<Value>) {
-      Throw("None Scalar Value not implemented!");
-    }
-
-    FloatP t_hit = ray.maxt;
+    // Initialize
+    FloatP t_hit = dr::Infinity<FloatP>;
     dr::mask_t<FloatP> found = false;
 
+    // Sample at ray origin
     FloatP prev_t = FloatP(0);
     FloatP prev_f = m_gp.sample(ray.o);
 
-    auto step = ray.maxt / m_num_samples;
+    // Fixed marching step
+    FloatP step = ray.maxt / FloatP(m_num_samples);
+
     for (int i = 1; i < m_num_samples; ++i) {
       FloatP t = step * FloatP(i);
-      Point<FloatP, 3> p = ray.o + ray.d * t;
+      Point3fp p = ray.o + ray.d * t;
+
       FloatP f = m_gp.sample(p);
 
-      auto sign_change =
-          ((prev_f <= 0.f && f > 0.f) || (prev_f >= 0.f && f < 0.f));
+      // Detect zero crossing
+      dr::mask_t<FloatP> sign_change =
+          ((prev_f <= FloatP(0) && f > FloatP(0)) ||
+           (prev_f >= FloatP(0) && f < FloatP(0)));
 
-      auto hit_mask = sign_change && !found;
+      dr::mask_t<FloatP> hit_mask = sign_change && !found && active;
 
+      // Linear interpolation
       FloatP alpha = prev_f / (prev_f - f);
       FloatP t_interp = dr::lerp(prev_t, t, alpha);
 
@@ -323,44 +337,12 @@ public:
       prev_t = t;
     }
 
-    // We define a plane which is perpendicular to the ray direction and
-    // contains the sphere center and intersect it. We then solve the
-    // ray-sphere intersection as if the ray origin was this new
-    // intersection point. This additional step makes the whole intersection
-    // routine numerically more robust.
+    // If no intersection → return infinity
+    FloatP t_final = dr::select(found, t_hit, dr::Infinity<FloatP>);
 
-    Value3 l = ray.o - center;
-    Value3 d(ray.d);
-    Value plane_t = dot(-l, d) / norm(d);
-    Value3 plane_p = ray(FloatP(plane_t));
-
-    // New origin for ray-sphere intersection
-    Value3 o = plane_p - center;
-
-    // Solve ray-sphere intersection with new ray origin
-    Value A = dr::squared_norm(d);
-    Value B = dr::scalar_t<Value>(2.f) * dr::dot(o, d);
-    Value C = dr::squared_norm(o) - dr::square(radius);
-    auto [solution_found, near_t, far_t] = math::solve_quadratic(A, B, C);
-
-    // Adjust distances for plane intersection
-    near_t += plane_t;
-    far_t += plane_t;
-
-    Value maxt = Value(ray.maxt);
-    // Sphere doesn't intersect with the segment on the ray
-    dr::mask_t<FloatP> out_bounds =
-        !(near_t <= maxt && far_t >= Value(0.0)); // NaN-aware conditionals
-
-    // Sphere fully contains the segment of the ray
-    dr::mask_t<FloatP> in_bounds = near_t < Value(0.0) && far_t > maxt;
-
-    active &= solution_found && !out_bounds && !in_bounds;
-
-    FloatP t = dr::select(near_t < Value(0.0), FloatP(far_t), FloatP(near_t));
-    t = dr::select(active, t, dr::Infinity<FloatP>);
-
-    return {t, dr::zeros<Point<FloatP, 2>>(), ((uint32_t)-1), 0};
+    return {t_final, dr::zeros<Point<FloatP, 2>>(),
+            dr::uint32_array_t<FloatP>((uint32_t)-1),
+            dr::uint32_array_t<FloatP>(0)};
   }
 
   template <typename FloatP, typename Ray3fP>
