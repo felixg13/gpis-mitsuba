@@ -2,7 +2,7 @@
 
 This project implements a Gaussian Process Implicit Surface (GPIS) shape plugin for the [Mitsuba3 renderer](https://github.com/mitsuba-renderer/mitsuba3). The underlying algorithm is derived from the paper: "From Microfacette to participating media: a unified theory of light transport" by Seyb et al.
 
-![A rendering of a scene featuring a Gaussian Process Implicit Surface sphere.](img/02_14_23h25_128spp.png)
+![A rendering of a scene featuring a Gaussian Process Implicit Surface sphere.](img/02_14_23h25_Lighter128spp.png)
 
 ## Plugin Overview: `GpisSphere`
 
