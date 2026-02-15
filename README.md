@@ -2,7 +2,7 @@
 
 This project implements a Gaussian Process Implicit Surface (GPIS) shape plugin for the [Mitsuba3 renderer](https://github.com/mitsuba-renderer/mitsuba3). The underlying algorithm is derived from the paper: "From Microfacette to participating media: a unified theory of light transport" by Seyb et al.
 
-![A rendering of a scene featuring a Gaussian Process Implicit Surface sphere.](img/render.png)
+![A rendering of a scene featuring a Gaussian Process Implicit Surface sphere.](img/02_14_23h25_128spp.png)
 
 ## Plugin Overview: `GpisSphere`
 
@@ -17,9 +17,9 @@ This shape is compiled and linked with Mitsuba3. The resulting `gpisSphere.so`�
 
 The project requires Mitsuba3 to be compiled first, so its dependencies are inherited. The primary dependencies include:
 
-- **CMake**: Version 3.28 or newer
-- **GCC**: Version 13 or newer
-- **Ninja**: Version 11 or newer
+- **CMake**: Version 3.28
+- **GCC**: Version 13
+- **Ninja**: Version 11
 
 For ease of setup, a `flake.nix` file is provided to configure a compatible development environment. You can activate it by running:
 
